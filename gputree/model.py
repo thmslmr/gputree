@@ -7,7 +7,27 @@ COMMAND = "nvidia-smi -x -q"
 
 
 class Session:
+    """Session data model.
+
+    Attributes:
+        hostname (str): The session hostname.
+        user (str): The session username.
+        name (str): The session name id.
+        gpus (list[GPU]): List of gpus object for this session.
+        error (str): Error message if exists.
+        status (str): Current status of the session.
+
+    """
+
     def __init__(self, hostname: str, user: str, name: str):
+        """Set connection informations.
+
+        Args:
+            hostname (str): The session hostname.
+            user (str): The session username.
+            name (str): The session name id.
+
+        """
         self.hostname = hostname
         self.user = user
         self.name = name
@@ -16,7 +36,16 @@ class Session:
         self.error = ""
         self.status = "WAITING"
 
-    async def fetch(self, timeout):
+    async def fetch(self, timeout: int):
+        """Fetch session informations.
+
+        Args:
+            timeout (int): Timeout in second for SSH connection.
+
+        Returns:
+            asyncssh.SSHCompletedProcess : Results from running the command.
+
+        """
         try:
             conn = await asyncio.wait_for(
                 asyncssh.connect(self.hostname, username=self.user, password=None),
@@ -28,14 +57,16 @@ class Session:
             return e
 
     def update(self, output):
+        """Update session information from command output.
+
+        Args:
+            output: Either an Exception or a SSHCompletedProcess.
+
+        """
         if isinstance(output, Exception):
             self.status = "SSH_ERROR"
             error_message = str(output)
-            self.error = (
-                "\t"
-                + (error_message if error_message else type(output).__name__)
-                + "\n"
-            )
+            self.error = error_message if error_message else type(output).__name__
 
         elif output.exit_status != 0:
             self.status = "COMMAND_ERROR"
@@ -54,16 +85,30 @@ class Session:
             "SSH_ERROR": "{{t.red}}",
             "COMMAND_ERROR": "{{t.red}}",
         }.get(self.status, "{{t.normal}}")
+
         return (
             "[" + status_color + "{self.status}{{t.normal}}] "
             "{{t.bold}}{self.name}{{t.normal}} "
-            "{{t.bright_black}}({self.user}@{self.hostname}){{t.normal}}\n"
-            "{self.error}"
+            "{{t.bright_black}}({self.user}@{self.hostname}){{t.normal}}"
         ).format(self=self)
 
 
 class GPU:
+    """GPU data model.
+
+    Attributes:
+        _e (ElementTree): XML ElementTree object containing GPU infos.
+        processes (list[Process]): The list of process on this GPU.
+
+    """
+
     def __init__(self, element):
+        """Store xml gpu infos and create process objects.
+
+        Args:
+            element (ElementTree): XML ElementTree object containing GPU infos.
+
+        """
         self._e = element
         self.processes = [
             Process(process)
@@ -97,11 +142,18 @@ class GPU:
     def __str__(self):
         return (
             "({{t.bold}}{self.id}{{t.normal}}) {self.name} | "
-            "{self.memory_used} / {self.memory_total} MiB\n"
+            "{self.memory_used} / {self.memory_total} MiB"
         ).format(self=self)
 
 
 class Process:
+    """GPU Process data model.
+
+    Attributes:
+        _e (ElementTree): XML ElementTree object containing process infos.
+
+    """
+
     def __init__(self, element):
         self._e = element
 
@@ -118,4 +170,4 @@ class Process:
         return self._e.findtext("used_memory")
 
     def __str__(self):
-        return "{self.pid} : {self.name} - {self.memory}\n".format(self=self)
+        return "{self.pid} : {self.name} - {self.memory}".format(self=self)

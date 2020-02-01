@@ -5,13 +5,30 @@ from .view import View
 
 
 class App:
-    def __init__(self, hosts, timeout):
+    """App object as main object.
+
+    Attributes:
+        sessions (list[Session]): List of session object to store session informations.
+        view (View): View object to display informations.
+        timeout (int): SSH connection timeout.
+
+    """
+
+    def __init__(self, hosts: list, timeout: int):
+        """Create sessions and view.
+
+        Args:
+            hosts (list): List of dict used to pass hosts informations.
+            timeout (int): SSH connection timeout.
+
+        """
         self.sessions = [Session(**host) for host in hosts]
         self.view = View()
 
         self.timeout = timeout
 
     def main(self):
+        """Run the app."""
         loop = asyncio.get_event_loop()
         try:
             loop.run_until_complete(self.future_sessions())
@@ -19,6 +36,7 @@ class App:
             loop.close()
 
     async def future_sessions(self):
+        """Create view, fetch session informations and display them as they arrived."""
         self.view.display(self.sessions)
 
         q = asyncio.Queue()
@@ -37,12 +55,25 @@ class App:
         for c in view_infos:
             c.cancel()
 
-    async def fetch_session_infos(self, session, q):
+    async def fetch_session_infos(self, session: Session, q: asyncio.Queue):
+        """Fetch single session and information and put message in queue once it's done.
+
+        Args:
+            session (Session): The session object.
+            q (Queue): The asyncio queue.
+
+        """
         res = await session.fetch(timeout=self.timeout)
         session.update(res)
         await q.put("DONE")
 
-    async def view_session_infos(self, q):
+    async def view_session_infos(self, q: asyncio.Queue):
+        """Update view by displaying new session information when new message in queue.
+
+        Args:
+            q (Queue): The asyncio queue.
+
+        """
         while True:
             await q.get()
             self.view.clear()

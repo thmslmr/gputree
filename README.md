@@ -1,5 +1,7 @@
 # `$ gputree`
 
+**Record GPU activity on distant machine thru `nvidia-smi` command.**
+
 Installation
 ---
 

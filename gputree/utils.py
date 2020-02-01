@@ -1,11 +1,16 @@
 import os
 import yaml
-import sys
 import shlex
 import re
 
 
-def get_config():
+def get_gputree_config():
+    """Fetch host config from gputree configuration file if found.
+
+    Returns:
+        dict: The configuration dictionnary.
+
+    """
     if os.environ.get("GPUTREE_CONFIG_FILE"):
         config_path = os.environ["GPUTREE_CONFIG_FILE"]
     elif os.environ.get("XDG_CONFIG_HOME"):
@@ -24,8 +29,18 @@ def get_config():
     return config
 
 
-def get_ssh_config(file_path="~/.ssh/config"):
-    ssh_config_path = os.path.expanduser(file_path)
+def get_ssh_config():
+    """Get configuration from SSH config file.
+
+    Returns:
+        dict: Hosts informations from ssh config file.
+
+    Raises:
+        ValueError: If a line or host name in unparsable.
+
+    """
+    PATH = "~/.ssh/config"
+    ssh_config_path = os.path.expanduser(PATH)
 
     with open(ssh_config_path) as f:
         ssh_config = {}
@@ -62,15 +77,29 @@ def get_ssh_config(file_path="~/.ssh/config"):
     return ssh_config
 
 
-def parse_hosts_option(hosts):
+def get_hosts_infos(hosts: list):
+    """Fetch hosts informations.
+
+    If no host is provided, look at configuration file. The configuration file
+    can refer to host defined in the ssh config file.
+
+    Args:
+        hosts (list): List of host with format "username@hostname".
+
+    Returns:
+        list[dict]: List of host informations.
+
+    Raises:
+        ValueError: If no host is found or host pass thru cli does not match format.
+
+    """
     output = []
 
     if not hosts:
-        config_hosts = get_config()
+        config_hosts = get_gputree_config()
 
         if not config_hosts:
-            print("ERROR - Unable to find hosts.")
-            sys.exit(1)
+            raise ValueError("Unable to find hosts.")
 
         hosts = config_hosts["hosts"].get("from-ssh-config", [])
         output = [
@@ -95,12 +124,11 @@ def parse_hosts_option(hosts):
 
         match = re.match(r"^([\w|\.]+)\@([\w|\.|\-]+)$", host)
         if not match:
-            print(
-                "ERROR - Invalid host '{}', does not match pattern username@hostname.".format(
+            raise ValueError(
+                "Invalid host '{}', does not match pattern username@hostname.".format(
                     host
                 )
             )
-            sys.exit(1)
 
         user, hostname = match.groups()
         output.append({"name": hostname, "user": user, "hostname": hostname})
