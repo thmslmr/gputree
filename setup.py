@@ -7,7 +7,7 @@ CLASSIFIERS = [
     "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3 :: Only"
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Software Development :: Libraries :: Python Modules",
@@ -29,9 +29,9 @@ setup(
     license="MIT",
     classifiers=CLASSIFIERS,
     python_requires=">=3.5.0",
-    install_requires=["asyncssh", "paramiko", "blessings"],
+    install_requires=["asyncssh", "blessings"],
     extras_require={},
     packages=find_packages(),
     entry_points={"console_scripts": ["gputree=gputree.cli:main"]},
-    include_package_data=True
+    include_package_data=True,
 )

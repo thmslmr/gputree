@@ -18,11 +18,12 @@ class Session:
 
     async def fetch(self, timeout):
         try:
-            with await asyncio.wait_for(asyncssh.connect(self.hostname,
-                                                         username=self.user,
-                                                         password=None),
-                                        timeout=timeout) as conn:
-                return await conn.run(COMMAND)
+            conn = await asyncio.wait_for(
+                asyncssh.connect(self.hostname, username=self.user, password=None),
+                timeout=timeout,
+            )
+            return await conn.run(COMMAND)
+
         except Exception as e:
             return e
 
@@ -30,7 +31,11 @@ class Session:
         if isinstance(output, Exception):
             self.status = "SSH_ERROR"
             error_message = str(output)
-            self.error = "\t" + (error_message if error_message else type(output).__name__) + "\n"
+            self.error = (
+                "\t"
+                + (error_message if error_message else type(output).__name__)
+                + "\n"
+            )
 
         elif output.exit_status != 0:
             self.status = "COMMAND_ERROR"
@@ -43,51 +48,27 @@ class Session:
             self.gpus = [GPU(gpu) for gpu in gpus]
 
     def __str__(self):
-        status_color = {"WAITING": "{{t.yellow}}",
-                        "OK": "{{t.green}}",
-                        "SSH_ERROR": "{{t.red}}",
-                        "COMMAND_ERROR": "{{t.red}}"
-                        }.get(self.status, "{{t.normal}}")
-        return ("[" + status_color + "{self.status}{{t.normal}}] "
-                "{{t.bold}}{self.name}{{t.normal}} "
-                "{{t.bright_black}}({self.user}@{self.hostname}){{t.normal}}\n"
-                "{self.error}").format(self=self)
-
-
-class Process:
-    """Model for GPU process data."""
-
-    def __init__(self, element):
-        """Create Process from ElementTree object.
-
-        Args:
-            element (ElementTree): Process informations in element tree format.
-
-        """
-        self._e = element
-
-    @property
-    def pid(self):
-        return self._e.findtext("pid")
-
-    @property
-    def name(self):
-        return self._e.findtext("process_name")
-
-    @property
-    def memory(self):
-        return self._e.findtext("used_memory")
-
-    def __str__(self):
-        return "{self.pid} : {self.name} - {self.memory}\n".format(self=self)
+        status_color = {
+            "WAITING": "{{t.yellow}}",
+            "OK": "{{t.green}}",
+            "SSH_ERROR": "{{t.red}}",
+            "COMMAND_ERROR": "{{t.red}}",
+        }.get(self.status, "{{t.normal}}")
+        return (
+            "[" + status_color + "{self.status}{{t.normal}}] "
+            "{{t.bold}}{self.name}{{t.normal}} "
+            "{{t.bright_black}}({self.user}@{self.hostname}){{t.normal}}\n"
+            "{self.error}"
+        ).format(self=self)
 
 
 class GPU:
-
     def __init__(self, element):
         self._e = element
-        self.processes = [Process(process) for process in
-                          element.find("processes").findall("process_info")]
+        self.processes = [
+            Process(process)
+            for process in element.find("processes").findall("process_info")
+        ]
 
     @property
     def id(self):
@@ -114,5 +95,27 @@ class GPU:
         return self._e.find("fb_memory_usage").findtext("total").replace(" MiB", "")
 
     def __str__(self):
-        return ("({{t.bold}}{self.id}{{t.normal}}) {self.name} | "
-                "{self.memory_used} / {self.memory_total} MiB\n").format(self=self)
+        return (
+            "({{t.bold}}{self.id}{{t.normal}}) {self.name} | "
+            "{self.memory_used} / {self.memory_total} MiB\n"
+        ).format(self=self)
+
+
+class Process:
+    def __init__(self, element):
+        self._e = element
+
+    @property
+    def pid(self):
+        return self._e.findtext("pid")
+
+    @property
+    def name(self):
+        return self._e.findtext("process_name")
+
+    @property
+    def memory(self):
+        return self._e.findtext("used_memory")
+
+    def __str__(self):
+        return "{self.pid} : {self.name} - {self.memory}\n".format(self=self)

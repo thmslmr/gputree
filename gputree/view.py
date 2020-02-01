@@ -2,7 +2,6 @@ from blessings import Terminal
 
 
 class View:
-
     def __init__(self):
         self._term = Terminal()
         self._n_lines = 0
@@ -22,13 +21,19 @@ class View:
             for i, gpu in enumerate(sess.gpus):
                 is_last_gpu = i == len(sess.gpus) - 1
                 gpu_prefix = "└── " if is_last_gpu else "├── "
-                sess_str += "\t" + self._term.bright_black(gpu_prefix) + str(gpu).format(t=self._term)
+                sess_str += (
+                    "\t"
+                    + self._term.bright_black(gpu_prefix)
+                    + str(gpu).format(t=self._term)
+                )
 
                 for i, process in enumerate(gpu.processes):
                     proc_prefix = "├── " if i < len(gpu.processes) - 1 else "└── "
                     tab_prefix = "\t\t" if is_last_gpu else "\t│\t"
 
-                    sess_str += self._term.bright_black(tab_prefix + proc_prefix) + str(process).format(t=self._term)
+                    sess_str += self._term.bright_black(tab_prefix + proc_prefix) + str(
+                        process
+                    ).format(t=self._term)
 
             output += sess_str
 
