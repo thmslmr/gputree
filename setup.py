@@ -29,7 +29,7 @@ setup(
     license="MIT",
     classifiers=CLASSIFIERS,
     python_requires=">=3.5.0",
-    install_requires=["asyncssh", "blessings"],
+    install_requires=["asyncssh", "blessings", "pyyaml"],
     extras_require={},
     packages=find_packages(),
     entry_points={"console_scripts": ["gputree=gputree.cli:main"]},
