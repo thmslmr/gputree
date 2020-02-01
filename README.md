@@ -1,5 +1,12 @@
 # `gputree`
 
+Installation
+---
+
+```bash
+pip install gputree
+```
+
 Hosts configuration
 ---
 
