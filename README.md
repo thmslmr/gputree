@@ -1,4 +1,4 @@
-# `gputree`
+# `$ gputree`
 
 Installation
 ---
@@ -50,3 +50,8 @@ hosts:
     - gpu-1
     - gpu-2
 ```
+
+License
+---
+
+This project is under [MIT License](./LICENSE)
